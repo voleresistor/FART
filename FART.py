@@ -250,8 +250,8 @@ if __name__ == "__main__":
     # BUG: JSON isn't supported anymore but will be again
     if not opts['json_file']:
         # Set up our user agent string and query MusicBrainz
-        select_album.new_useragent()
-        album_info = select_album.select_album(opts['artist'], opts['album'])
+        FARTmbngs.new_useragent()
+        album_info = FARTmbngs.select_album(opts['artist'], opts['album'])
         my_album = AlbumData(opts['artist'], opts['album'], album_info['release'])
     else:
         # Load JSON file
