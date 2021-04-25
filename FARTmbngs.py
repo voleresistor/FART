@@ -52,7 +52,7 @@ def get_user_selection(_count):
             print("Invalid selection. Please try again.")
     return(0)
 
-def get_releases(_artist, _album, _limit=5):
+def get_releases(_artist, _album, _limit=0):
     '''
     Query MusicBrainz a second time for all releases in the selected release group
 
@@ -82,29 +82,53 @@ def get_release_data(_rid):
     _result = musicbrainzngs.get_release_by_id(_rid, includes=_includes)
     return(_result)
 
+def organize_releases(_releases):
+    '''
+    '''
+    _organized = []
+    _i = 0
+    for _release in _releases:
+        _this_result = {
+            'id': "[" + str(_i) + "]",
+            'artists': (_release['artist-credit-phrase'] if 'artist-credit-phrase' in _release else '-'),
+            'title': (_release['title'] if 'title' in _release else '-'),
+            'country': (_release['release-event-list'][0]['area']['name'] if 'release-event-list' in _release else '-'),
+            'date': (_release['date'] if 'date' in _release else '-'),
+            'counts': str((_release['medium-track-count'] if 'medium-track-count' in _release else 0)) + "(" + 
+                str((_release['medium-count'] if 'medium-count' in _release else 0)) + ")"
+        }
+        _organized.append(_this_result)
+        _i += 1
+    return(_organized)
+
+def get_col_widths(_sorted_list):
+    '''
+    '''
+    _col_widths = []
+    for _key in _sorted_list[0]:
+        _col_widths.append(max(len(_release[_key]) for _release in _sorted_list) + 2)
+    return(_col_widths)
+
 def print_releases(_releases):
     '''
     Print individual release info
 
-    _release_ids: List of 
+    _releases: List of releases
     '''
-    _i = 0
-    for _release in _releases:
-        print("\r\n{title} ({score}) [{idx}]\r\n\t{artists}\r\n\t{country} - {date}\r\n\tFormat: {format} - {tracks}/({media})".format(
-            id = (_release['id'] if 'id' in _release else '-'),
-            idx = _i,
-            artists = (_release['artist-credit-phrase'] if 'artist-credit-phrase' in _release else '-'),
-            title = (_release['title'] if 'title' in _release else '-'),
-            date = (_release['date'] if 'date' in _release else '-'),
-            country = (_release['release-event-list'][0]['area']['name'] if 'release-event-list' in _release else '-'),
-            score = (_release['ext:score'] if 'ext:score' in _release else 'N/A'),
-            format = (_release['medium-list'][0]['format'] if 'format' in _release['medium-list'][0] else '-'),
-            tracks = (_release['medium-track-count'] if 'medium-track-count' in _release else 0),
-            media = (_release['medium-count'] if 'medium-count' in _release else 0)
+    _sorted_list = organize_releases(_releases)
+    _result_count = len(_sorted_list)
+    _col_widths = get_col_widths(_sorted_list)
+
+    for _row in _sorted_list:
+        print("{}{}{}{}{}{}".format(
+            "".join(_row['id'].ljust(_col_widths[0])),
+            "".join(_row['artists'].ljust(_col_widths[1])),
+            "".join(_row['title'].ljust(_col_widths[2])),
+            "".join(_row['country'].ljust(_col_widths[3])),
+            "".join(_row['date'].ljust(_col_widths[4])),
+            "".join(_row['counts'].ljust(_col_widths[5]))
         ))
-        _i += 1
-    
-    return(_i)
+    return(_result_count)
 
 #if __name__ == "__main__":
 #    # Define a useragent
