@@ -164,30 +164,32 @@ def match_track(_min_match_pct, _track_title, _file_list):
     _track_title: Title of the track from dict
     _file_list: List of files gathered from the local repository
     '''
-    while True:
-        _this_list = _file_list
-        _song_match = process.extractOne(_track_title, _this_list)
-        if _song_match[1] < _min_match_pct:
+    _song_matches = process.extract(_track_title, _file_list)
+    for _match in _song_matches:
+        if _match[1] > _min_match_pct:
+            _new_match = {
+                'FileName': _match[0],
+                'MatchPct': _match[1]
+            }
+        else:
             print('\tNo definitive match for: {}'.format(_track_title))
-            print('\tMatch: {}: {}'.format(_song_match[0], _song_match[1]))
-            _response = input("Confirm this match? [y/N/q]: ")
+            print('\tFirst match: {}: {}'.format(_match[0], _match[1]))
+            _response = input("Confirm this match? [y/N/q]: ").lower()
 
-            if _response.lower() in ['q', 'quit']:
+            if _response in ['q', 'quit']:
                 print("Exiting...")
                 exit(1)
-            elif _response.lower() in ['y']:
-                break
-            else:
-                _this_list.remove(_song_match[0])
-        else:
-            break
+            elif _response in ['y', 'yes']:
+                _new_match = {
+                    'FileName': _match[0],
+                    'MatchPct': _match[1]
+                }
+        if _new_match:
+            return(_new_match)
 
-    _new_match = {
-        'FileName': _song_match[0],
-        'MatchPct': _song_match[1]
-    }
-        
-    return(_new_match)
+    # No matches. Warn and exit cleanly
+    print("No matches found for {}. Exiting...".format(_track_title))
+    exit(1)
 
 # get_album_path
 def get_album_path(_music_root, _artist_name, _album_name):
@@ -232,11 +234,12 @@ if __name__ == "__main__":
         get_help('short')
         exit(1)
 
-    # Test album path and create if necessary
-    opts['album_path'] = get_album_path(opts['music_root'], opts['artist'], opts['album'])
-
     # Download the files using youtube-dl
     if opts['youtube-dl']:
+        # Test album path and create if necessary
+        opts['album_path'] = get_album_path(opts['music_root'], opts['artist'], opts['album'])
+
+        # Download
         ytdl_opts = "-x -f 251 " + opts['youtube-dl']
         ytdl = subprocess.run(['youtube-dl', "-x", "-f", "251", opts['youtube-dl']], cwd=opts['album_path'])
         if ytdl.check_returncode():
