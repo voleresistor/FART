@@ -1,13 +1,6 @@
 #!/usr/bin/python
 # FART.py: Read in data from a JSON file and rename audio files using fuzzy matching
 #
-# REQUIREMENTS (Can be installed via pip)
-#	python-Levenshtein - Levenshtein algorithm for fuzzy matching
-#	fuzzywuzzy - builds on Levenshtein
-#	musicbrainzngs - Python library for interacting with MusicBrainz Web API
-#
-#	pip install python-Levenshtein fuzzywuzzy musicbrainzngs
-#
 # TODO: GUI front end using PyGObject?
 # TODO: Option to allow automatic rename of entire collection? YIKES
 # TODO: Debug and test options?
@@ -54,7 +47,13 @@ def get_help(_help_type):
 # get_options
 def get_options(_args):
     '''
+    Parse command line switches into options dict
+
+    _args: list of arguments from the command line
+
+    returns: dict
     '''
+    # These are our defaults for now
     _options = {
         'music_root': '.',
         'album': None,
@@ -64,7 +63,8 @@ def get_options(_args):
         'report_only': False,
         'ignore_warn': False,
         'min_match_pct': 75,
-        'youtube-dl': None
+        'youtube-dl': None,
+        'album_path': None
     }
 
     _opts, _argv = getopt.getopt(_args, 'a:l:j:r:u:htiy', \
@@ -100,6 +100,14 @@ def get_options(_args):
         else:
             get_help('short')
             exit()
+
+    # Verify that artist and album were both processed
+    if _options['album'] == None or _options['artist'] == None:
+        get_help('short')
+        sys.exit('ERROR: Please specify both artist and album.')
+
+    # I wonder if there's a beter place to build this string?
+    _options['album_path'] = _options['music_root'] + '/' + _options['artist'] + '/' + _options['album']
     
     return _options
 
@@ -107,19 +115,24 @@ def get_options(_args):
 def load_json(__album_data, _music_root, _artist_name, _album_name):
     '''
     Load album data JSON file. If no file is given, assume a
-    standard path like "Artist Name/artistname-albumname.json"	
+    standard path like "Artist Name/artistname-albumname.json"
+
     _album_data: path and file name of JSON file
     _music_root: Root directory that albums are stored in
     _artist_name: Directory name of artist
     _album_name: Directory name of album
+
+    return: dict
     '''
+    # Just quit until this functionality is returned
+    sys.exit('SON not currently supported.')
+
     if _album_data == None:
         _album_data = _music_root + '/' + _artist_name + '/' +	_artist_name.lower().replace(' ', '') + '-' + \
             _album_name.lower().replace(' ', '') + '.json'
         
     if not path.exists(_album_data):
-        print('ERROR: JSON file not present or not readable: {}'.format(_album_data))
-        exit(1)
+        sys.exit('ERROR: JSON file not present or not readable: {}'.format(_album_data))
 
     with open(_album_data, 'r') as jd:
         return json.load(jd)
@@ -195,18 +208,18 @@ def match_track(_min_match_pct, _track_title, _file_list):
 # get_album_path
 def get_album_path(_music_root, _artist_name, _album_name):
     '''
-    Build and verify an album path using provided parameters
+    Build an album path using provided parameters
 
     _music_root: Root directory that albums are stored in
     _artist_name: Directory name of artist
     _album_name: Directory name of album
+
+    return: string
     '''
     _new_path = _music_root + '/' + _artist_name + '/' + _album_name
     if not path.isdir(_new_path):
-        create_album_path(_new_path)
-        #print('ERROR: album path not found: {}'.format(_new_path))
-        #exit(1)
-
+        return(None)
+        #create_album_path(_new_path)
     return _new_path
 
 # create_album_path
@@ -218,57 +231,70 @@ def create_album_path(_path):
 
     return: None
     '''
-    print("Creating new directory: {}".format(_path))
     try:
         makedirs(_path, exist_ok=True)
         print("Created non-existant directory: {}".format(_path))
     except OSError as error:
-        print("ERROR: Couldn't create directory: {}".format(_path))
-        exit(1)
+        sys.exit("ERROR: Couldn't create directory: {}".format(_path))
+
+# download_album()
+def download_album(_url, _path):
+    '''
+    Using youtube-dl, download the album at the provided URL
+
+    _url: The url to the album playlist
+    -patth: Path to download files to
+
+    return: None
+    '''
+    ytdl = subprocess.run(['youtube-dl', "-x", "--audio-format", "mp3", _url], cwd=_path)
+    if ytdl.check_returncode():
+        sys.exit("ERROR: There was a problem with the download.")
+
+# check_track_counts()
+def check_track_counts(_data, _local, _ignore):
+    '''
+    Compare counts of tracks in queried data and local folder
+
+    _data: int - number of tracks in queried data
+    _local: int - number of files in local folder
+    _ignore: bool - was -i passed at the CLI?
+
+    return: None
+    '''
+    if _data != _local and not _ignore:
+        sys.exit('WARNING: album data and file count mismatch.')
 
 # Hide main vars from global scope by defining a separate main() function
 def main():
     # Process command line arguments
     opts = get_options(sys.argv[1:])
-    if opts['album'] == None or opts['artist'] == None:
-        print('ERROR: Please specify both artist and album.\r\n')
-        get_help('short')
-        exit(1)
 
     # Test album path and create if necessary
-    opts['album_path'] = get_album_path(opts['music_root'], opts['artist'], opts['album'])
+    if not path.isdir(opts['album_path']):
+        create_album_path(opts['album_path'])
 
     # Download the files using youtube-dl
     if opts['youtube-dl']:
-        # Download
-        ytdl_opts = "-x -f 251 " + opts['youtube-dl']
-        ytdl = subprocess.run(['youtube-dl', "-x", "--audio-format", "mp3", opts['youtube-dl']], cwd=opts['album_path'])
-        if ytdl.check_returncode():
-            print("ERROR: There was a problem with the download.")
-            exit(1)
+        # check that youtube-dl is installed
+        download_album(opts['youtube-dl'], opts['album_path'])
 
     # Get local file listing
     files = get_local_files(opts['album_path'])
 
     # If a JSON file wasn't given then get data from MusicBrainz
     # BUG: JSON isn't supported anymore but will be again
-    if not opts['json_file']:
-        # Set up our user agent string and query MusicBrainz
+    if opts['json_file']:
+        # JSON data
+        my_album = load_json(opts['json_file'], opts['root'], opts['artist'], opts['album'])
+    else:
+        # MusicBrainz data
         FARTmbngs.new_useragent()
         album_info = FARTmbngs.select_album(opts['artist'], opts['album'])
         my_album = AlbumData(opts['artist'], opts['album'], album_info['release'])
-    else:
-        # Load JSON file
-        album_info = load_json(opts['json_file'], opts['root'], opts['artist'], opts['album'])
-        print("JSON not currently supported in this version.")
-        exit(1)
 
     # Verify that folder contains same number of songs as album info
-    if my_album.get_track_count() != len(files):
-        print("WARNING: album data and file count mismatch.\r\n")
-        if not opts['ignore_warn']:
-            exit(1)
-
+    check_track_counts(my_album.get_track_count(), len(files), opts['ignore_warn'])
 
     # Loop through CDs and tracks to build a database
     for medium in my_album.Media:
