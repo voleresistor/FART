@@ -226,8 +226,8 @@ def create_album_path(_path):
         print("ERROR: Couldn't create directory: {}".format(_path))
         exit(1)
 
-# main process
-if __name__ == "__main__":
+# Hide main vars from global scope by defining a separate main() function
+def main():
     # Process command line arguments
     opts = get_options(sys.argv[1:])
     if opts['album'] == None or opts['artist'] == None:
@@ -293,4 +293,7 @@ if __name__ == "__main__":
     else:
         print('Canceling changes...\r\n')
 
+# main process
+if __name__ == "__main__":
+    main()
     exit(0)
