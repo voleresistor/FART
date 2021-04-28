@@ -164,6 +164,7 @@ def match_track(_min_match_pct, _track_title, _file_list):
     _track_title: Title of the track from dict
     _file_list: List of files gathered from the local repository
     '''
+    _new_match = None
     _song_matches = process.extract(_track_title, _file_list)
     for _match in _song_matches:
         if _match[1] > _min_match_pct:
@@ -184,7 +185,7 @@ def match_track(_min_match_pct, _track_title, _file_list):
                     'FileName': _match[0],
                     'MatchPct': _match[1]
                 }
-        if _new_match:
+        if _new_match != None:
             return(_new_match)
 
     # No matches. Warn and exit cleanly
@@ -234,14 +235,14 @@ if __name__ == "__main__":
         get_help('short')
         exit(1)
 
+    # Test album path and create if necessary
+    opts['album_path'] = get_album_path(opts['music_root'], opts['artist'], opts['album'])
+
     # Download the files using youtube-dl
     if opts['youtube-dl']:
-        # Test album path and create if necessary
-        opts['album_path'] = get_album_path(opts['music_root'], opts['artist'], opts['album'])
-
         # Download
         ytdl_opts = "-x -f 251 " + opts['youtube-dl']
-        ytdl = subprocess.run(['youtube-dl', "-x", "-f", "251", opts['youtube-dl']], cwd=opts['album_path'])
+        ytdl = subprocess.run(['youtube-dl', "-x", "--audio-format", "mp3", opts['youtube-dl']], cwd=opts['album_path'])
         if ytdl.check_returncode():
             print("ERROR: There was a problem with the download.")
             exit(1)
