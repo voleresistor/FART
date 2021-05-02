@@ -1,22 +1,17 @@
 #!/usr/bin/python
 # FART.py: Read in data from a JSON file and rename audio files using fuzzy matching
-#
-# TODO: GUI front end using PyGObject?
-# TODO: Option to allow automatic rename of entire collection? YIKES
-# TODO: Debug and test options?
-# TODO: Load an external config file that maintains defaults like music folder root?
-# TODO: Allow editing of matches?
-# TODO: Major code review. Simplify and deobfuscate - ongoing
-# TODO: Pretty up output with spacing and maybe colors
-#
-# BUG: Script fails when accessing non-existent keys in source dicts
-# BUG: -y switch not universal
 
 import json, sys, getopt, subprocess, FARTmbngs
 from os import listdir, rename, path, makedirs
 from os.path import isfile, join
 from fuzzywuzzy import process
 from FARTClasses import AlbumData, TrackData		# Custom classes
+
+# ========  Globals  ========
+VERSION = '0.7a'
+PROGRAM_NAME = 'FART'
+PROGRAM_DESC = 'Foggy Album Rename Tool'
+FILE_NAME = sys.argv[0]
 
 # ======== Functions ========
 # get_help
@@ -26,8 +21,12 @@ def get_help(_help_type):
 
     _help_type: [short|full] determines how much help to display
     '''
-    print('FART.py: v0.6a\r\n')
-    print('Usage: FART.py -a <artist> -l <album> [ -r  <root path> | -h | -t | -i ]\r\n')
+    print('{} - {}: v{}\r\n'.format(
+        PROGRAM_NAME,
+        PROGRAM_DESC,
+        VERSION
+    ))
+    print('Usage: {} -a <artist> -l <album> [ -r  <root path> | -h | -t | -i ]\r\n'.format(FILE_NAME))
 
     if _help_type == 'full':
         print('Options:')
@@ -42,7 +41,7 @@ def get_help(_help_type):
         print('   -y\t\t\tDo not request change confirmation prior to rename.')
         print('   -h --help\t\tPrint this help file.')
     else:
-        print('For full help, run FART.py [-h | --help]\r\n')
+        print('For full help, run {} [-h | --help]\r\n'.format(FILE_NAME))
 
 # get_options
 def get_options(_args):
@@ -149,17 +148,20 @@ def confirm_response(_message):
     return False
 
 # rename_track
-def rename_track(_track, _root):
+def rename_track(track, root):
     '''
     Rename a given track using data queried from the object
 
-    _track: The TrackData object
-    _root: The folder root of tthe files being renamed
+    track: The TrackData object
+    root: The folder root of tthe files being renamed
 
     return: None
     '''
-    print('Renaming:\r\n\t{}\r\n\t{}\r\n'.format(_track.get_file_name(), _track.get_new_name()))
-    rename(_root + '/' + _track.get_file_name(), _root + '/' + _track.get_new_name())
+    try:
+        rename(root + '/' + track.get_file_name(), root + '/' + track.get_new_name())
+    except:
+        print('WARNING: Unable to rename {}'.format(track.get_file_name()))
+
 
 # get_local_files
 def get_local_files(_album_path):
@@ -280,7 +282,7 @@ def main():
         download_album(opts['youtube-dl'], opts['album_path'])
 
     # Get local file listing
-    files = get_local_files(opts['album_path'])
+    local_files = get_local_files(opts['album_path'])
 
     # If a JSON file wasn't given then get data from MusicBrainz
     # BUG: JSON isn't supported anymore but will be again
@@ -294,16 +296,18 @@ def main():
         my_album = AlbumData(opts['artist'], opts['album'], album_info['release'])
 
     # Verify that folder contains same number of songs as album info
-    check_track_counts(my_album.get_track_count(), len(files), opts['ignore_warn'])
+    check_track_counts(my_album.get_track_count(), len(local_files), opts['ignore_warn'])
 
     # Loop through CDs and tracks to build a database
+    match_candidates = local_files
     for medium in my_album.Media:
         for track in medium['TrackList']:
             this_match = match_track(
                 opts['min_match_pct'],
                 track.get_track_title(),
-                files
+                match_candidates
             )
+            match_candidates.remove(this_match['FileName'])
             track.add_match(this_match['FileName'], this_match['MatchPct'])
 
     # Always print a report

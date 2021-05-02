@@ -84,6 +84,12 @@ def get_release_data(_rid):
 
 def organize_releases(releases):
     '''
+    Take dict of release data and return an ordered list of data for use in printing
+    a summary.
+
+    releases: dict of release data
+
+    rreturns: list of lists
     '''
     organized = [
         ['ID', 'Artist', 'Title', 'Country', 'Date', 'Tracks(Media)'],
