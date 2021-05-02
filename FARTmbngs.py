@@ -82,68 +82,81 @@ def get_release_data(_rid):
     _result = musicbrainzngs.get_release_by_id(_rid, includes=_includes)
     return(_result)
 
-def organize_releases(_releases):
+def organize_releases(releases):
     '''
     '''
-    _organized = []
-    _i = 0
-    for _release in _releases:
-        _this_result = {
-            'id': "[" + str(_i) + "]",
-            'artists': (_release['artist-credit-phrase'] if 'artist-credit-phrase' in _release else '-'),
-            'title': (_release['title'] if 'title' in _release else '-'),
-            'country': (_release['release-event-list'][0]['area']['name'] if 'release-event-list' in _release else '-'),
-            'date': (_release['date'] if 'date' in _release else '-'),
-            'counts': str((_release['medium-track-count'] if 'medium-track-count' in _release else 0)) + "(" + 
-                str((_release['medium-count'] if 'medium-count' in _release else 0)) + ")"
-        }
-        _organized.append(_this_result)
-        _i += 1
-    return(_organized)
+    organized = [
+        ['ID', 'Artist', 'Title', 'Country', 'Date', 'Tracks(Media)'],
+        ['--', '------', '-----', '-------', '----', '-------------']
+    ]
+    i = 0
+    for release in releases:
+        this_result = [
+            str("[" + str(i) + "]"),
+            str(release['artist-credit-phrase'] if 'artist-credit-phrase' in release else '-'),
+            str(release['title'] if 'title' in release else '-'),
+            str(release['release-event-list'][0]['area']['name'] if 'release-event-list' in release else '-'),
+            str(release['date'] if 'date' in release else '-'),
+            str(str((release['medium-track-count'] if 'medium-track-count' in release else 0)) + "(" + 
+                str((release['medium-count'] if 'medium-count' in release else 0)) + ")")
+        ]
+        organized.append(this_result)
+        i += 1
+    return(organized)
 
-def get_col_widths(_sorted_list):
+def get_col_width_list(my_list, row_len):
     '''
-    '''
-    _col_widths = []
-    for _key in _sorted_list[0]:
-        _col_widths.append(max(len(_release[_key]) for _release in _sorted_list) + 2)
-    return(_col_widths)
+    Return the given list of lists with an additional list of max lengths per index
+    inserted at index 0.
 
-def print_releases(_releases):
+    my_list: Given list of lists. All internal lists must be the same length
+    row_len: Length of an internal list
+
+    Returns: List of lists
+    '''
+    col_width = []
+    for i in range(row_len):
+        col_width.append(max(len(item[i]) for item in my_list) + 2)
+    my_list.insert(0, col_width)
+    return(my_list)
+
+def print_cols(my_list):
+    '''
+    Prints the given list in a table with each sublist starting at index 1 as a row.
+    Assumes index 0 contains the maximum length of the respective index in the other lists.
+
+    my_list: The given list
+
+    Returns: None
+    '''
+    for row in my_list[1:]:
+        for col in row:
+            print("".join(col.ljust(my_list[0][row.index(col)])), end='')
+        print()
+
+def print_releases(releases):
     '''
     Print individual release info
 
-    _releases: List of releases
+    releases: List of releases
+
+    Return: None
     '''
-    _sorted_list = organize_releases(_releases)
-    _result_count = len(_sorted_list)
-    _col_widths = get_col_widths(_sorted_list)
+    sorted_list = organize_releases(releases)
+    sorted_list = get_col_width_list(sorted_list, len(sorted_list[0]))
+    print_cols(sorted_list)
+    return(len(sorted_list))
 
-    for _row in _sorted_list:
-        print("{}{}{}{}{}{}".format(
-            "".join(_row['id'].ljust(_col_widths[0])),
-            "".join(_row['artists'].ljust(_col_widths[1])),
-            "".join(_row['title'].ljust(_col_widths[2])),
-            "".join(_row['country'].ljust(_col_widths[3])),
-            "".join(_row['date'].ljust(_col_widths[4])),
-            "".join(_row['counts'].ljust(_col_widths[5]))
-        ))
-    return(_result_count)
+def main():
+    # Define a useragent
+    new_useragent()
 
-#if __name__ == "__main__":
-#    # Define a useragent
-#    new_useragent()
-#
-#    # Get artist/album
-#    artist = "Wardruna"
-#    album = "Runaljod Ragnarok"
-#
-#    # Get releases
-#    #release_id_list = get_release_groups(artist, album)
-#    #for release_id in release_id_list:
-#    #    print(u"Selected ID: {}".format(release_id))
-#    #album_data = select_album(artist, album)
-#    #print(album_data)
-#
-#    my_release = select_album(artist, album)
-#    print(my_release)
+    # Get artist/album
+    artist = "Wardruna"
+    album = "Runaljod Ragnarok"
+
+    my_release = select_album(artist, album)
+    print(my_release)
+
+if __name__ == "__main__":
+    main()

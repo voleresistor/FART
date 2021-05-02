@@ -307,7 +307,9 @@ def main():
             track.add_match(this_match['FileName'], this_match['MatchPct'])
 
     # Always print a report
-    my_album.print_report()
+    match_report = my_album.get_report()
+    match_report = FARTmbngs.get_col_width_list(match_report, len(match_report[0]))
+    FARTmbngs.print_cols(match_report)
     if opts['report_only']:
         exit(0)
 

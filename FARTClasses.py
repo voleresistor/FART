@@ -71,22 +71,27 @@ class AlbumData:
         for media in self.Media:
             self.print_media_tracks(media['MediaNumber'])
 
-    def print_report(self):
+    def get_report(self):
         '''
-        Print report on tracks and matching files
+        Get report on tracks and matching files
 
-        return: None
+        return: list
         '''
+        match_report = [
+            ['TrackNumber', 'Title', 'File', 'MatchPercent'],
+            ['-----------', '-----', '----', '------------']
+        ]
         for _media in self.Media:
-            self.print_album()
-            print("\r\nDisc: {}".format(_media['MediaNumber']))
             for _track in _media['TrackList']:
-                print(u"{} - {} - {} - {}".format(
-                    _track.get_track_number(),
-                    _track.get_track_title(),
-                    _track.get_file_name(),
-                    _track.get_match_pct()
-                ))
+                this_match = [
+                    str(_track.get_track_number()),
+                    str(_track.get_track_title()),
+                    str(_track.get_file_name()),
+                    str(_track.get_match_pct())
+                ]
+                match_report.append(this_match)
+        return(match_report)
+
 
 class TrackData:
     def __init__(self, title=None, artist=None, number=0, disc=0, match_data=[]):
