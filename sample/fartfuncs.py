@@ -97,10 +97,10 @@ def organize_releases(releases):
     for release in releases:
         this_result = [
             str("[" + str(i) + "]"),
-            str(release['artist-credit-phrase'] if 'artist-credit-phrase' in release else ''),
-            str(release['title'] if 'title' in release else ''),
-            str(release['release-event-list'][0]['area']['name'] if 'release-event-list' in release else ''),
-            str(release['date'] if 'date' in release else ''),
+            str(release['artist-credit-phrase'] if 'artist-credit-phrase' in release else ' '),
+            str(release['title'] if 'title' in release else ' '),
+            str(release['release-event-list'][0]['area']['name'] if 'release-event-list' in release else ' '),
+            str(release['date'] if 'date' in release else ' '),
             str(str((release['medium-track-count'] if 'medium-track-count' in release else 0)) + "(" + 
                 str((release['medium-count'] if 'medium-count' in release else 0)) + ")")
         ]
@@ -108,18 +108,17 @@ def organize_releases(releases):
         i += 1
     return(organized)
 
-def get_col_width_list(my_list, row_len):
+def get_col_width_list(my_list):
     '''
     Return the given list of lists with an additional list of max lengths per index
     inserted at index 0.
 
     my_list: Given list of lists. All internal lists must be the same length
-    row_len: Length of an internal list
 
     Returns: List of lists
     '''
     col_width = []
-    for i in range(row_len):
+    for i in range(len(my_list[0])):
         col_width.append(max(len(item[i]) for item in my_list) + 2)
     my_list.insert(0, col_width)
     return(my_list)
@@ -147,7 +146,7 @@ def print_releases(releases):
     Return: None
     '''
     sorted_list = organize_releases(releases)
-    sorted_list = get_col_width_list(sorted_list, len(sorted_list[0]))
+    sorted_list = get_col_width_list(sorted_list)
     print_cols(sorted_list)
     return(len(sorted_list))
 

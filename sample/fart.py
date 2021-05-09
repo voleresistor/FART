@@ -306,7 +306,7 @@ def main():
 
     # Always print a report
     match_report = my_album.get_report()
-    match_report = fartfuncs.get_col_width_list(match_report, len(match_report[0]))
+    match_report = fartfuncs.get_col_width_list(match_report)
     fartfuncs.print_cols(match_report)
     if opts['report_only']:
         exit(0)
