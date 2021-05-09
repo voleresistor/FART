@@ -61,7 +61,7 @@ def get_options(_args):
     }
 
     _opts, _argv = getopt.getopt(_args, 'a:l:j:r:u:htiy', \
-    ['artist=', 'album=', 'json_file=', 'music_root=', 'min_match=', 'youtube-dl=', 'help', 'report_only','ignore_warn'])
+    ['artist=', 'album=', 'json-file=', 'music-root=', 'min-match=', 'youtube-dl=', 'help', 'report-only','ignore-warn'])
     for _opt, _arg in _opts:
         if _opt in ['-h', '--help']:
             get_help('full')
@@ -70,21 +70,21 @@ def get_options(_args):
             _options['album'] = _arg
         elif _opt in ['-a', '--artist']:
             _options['artist'] = _arg
-        elif _opt in ['-j', '--json_file']:
+        elif _opt in ['-j', '--json-file']:
             #_options['json_file'] = _arg
             continue
-        elif _opt in ['-r', '--music_root']:
+        elif _opt in ['-r', '--music-root']:
             _options['root'] = _arg
-        elif _opt in ['-t', '--report_only']:
+        elif _opt in ['-t', '--report-only']:
             print('Running in report only mode. No changes will be made.')
             _options['report_only'] = True
-        elif _opt in ['-i', '--ignore_warn']:
+        elif _opt in ['-i', '--ignore-warn']:
             _options['ignore_warn'] = True
         elif _opt in ['-u', '--youtube-dl']:
             _options['youtube-dl'] = _arg
         elif _opt in ['-y']:
             _options['response'] = True
-        elif _opt in ['--min_match']:
+        elif _opt in ['--min-match']:
             if int(_arg) in range(100):
                 _options['min_match_pct'] = int(_arg)
             else:
@@ -164,41 +164,48 @@ def get_local_files(_album_path):
     return [_t for _t in listdir(_album_path) if isfile(join(_album_path, _t))]
 
 # match_track
-def match_track(_min_match_pct, _track_title, _file_list):
+def match_track(min_match_pct, track_title, file_list, response=False):
     '''
     Use fuzzy logic to match track names from the given _file_list to the given _track_title
     from the data dict.
 
-    _min_match_pct: Minimum confidence percentage to consider a match
-    _track_title: Title of the track from dict
-    _file_list: List of files gathered from the local repository
+    min_match_pct: Minimum confidence percentage to consider a match
+    track_title: Title of the track from dict
+    file_list: List of files gathered from the local repository
+    response: Optional bool to skip user confirmation checks
+
+    Returns: dict
     '''
-    _new_match = None
-    _song_matches = process.extract(_track_title, _file_list)
-    for _match in _song_matches:
-        if _match[1] > _min_match_pct:
-            _new_match = {
-                'FileName': _match[0],
-                'MatchPct': _match[1]
+    new_match = None
+    song_matches = process.extract(track_title, file_list)
+    for match in song_matches:
+        if match[1] > min_match_pct:
+            new_match = {
+                'FileName': match[0],
+                'MatchPct': match[1]
             }
         else:
-            print('\tNo definitive match for: {}'.format(_track_title))
-            print('\tFirst match: {}: {}'.format(_match[0], _match[1]))
-            _response = input("Confirm this match? [y/N/q]: ").lower()
+            print('\tNo definitive match for: {}'.format(track_title))
+            print('\tFirst match: {}: {}'.format(match[0], match[1]))
 
-            if _response in ['q', 'quit']:
+            if not response:
+                user_response = input("Confirm this match? [y/N/q]: ").lower()
+            else:
+                user_response = 'y'
+
+            if user_response in ['q', 'quit']:
                 print("Exiting...")
                 exit(1)
-            elif _response in ['y', 'yes']:
-                _new_match = {
-                    'FileName': _match[0],
-                    'MatchPct': _match[1]
+            elif user_response in ['y', 'yes']:
+                new_match = {
+                    'FileName': match[0],
+                    'MatchPct': match[1]
                 }
-        if _new_match != None:
-            return(_new_match)
+        if new_match != None:
+            return(new_match)
 
     # No matches. Warn and exit cleanly
-    print("No matches found for {}. Exiting...".format(_track_title))
+    print("No matches found for {}. Exiting...".format(track_title))
     exit(1)
 
 # get_album_path
