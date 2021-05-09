@@ -7,12 +7,6 @@ from os.path import isfile, isdir, join, exists
 from fuzzywuzzy import process
 from albumdata import AlbumData
 
-# ========  Globals  ========
-VERSION = '0.7a'
-PROGRAM_NAME = 'FART'
-PROGRAM_DESC = 'Foggy Album Rename Tool'
-FILE_NAME = sys.argv[0]
-
 # ======== Functions ========
 # get_help
 def get_help(_help_type):
@@ -24,7 +18,7 @@ def get_help(_help_type):
     print('{} - {}: v{}\r\n'.format(
         PROGRAM_NAME,
         PROGRAM_DESC,
-        VERSION
+        PROGRAM_VERSION
     ))
     print('Usage: {} -a <artist> -l <album> [ -r  <root path> | -h | -t | -i ]\r\n'.format(FILE_NAME))
 
@@ -291,7 +285,7 @@ def main():
         my_album = load_json(opts['json_file'], opts['root'], opts['artist'], opts['album'])
     else:
         # MusicBrainz data
-        fartfuncs.new_useragent()
+        fartfuncs.new_useragent(PROGRAM_NAME, PROGRAM_DESC, PROGRAM_VERSION, PROGRAM_CONTACT)
         album_info = fartfuncs.select_album(opts['artist'], opts['album'])
         my_album = AlbumData(opts['artist'], opts['album'], album_info['release'])
 
@@ -327,4 +321,11 @@ def main():
 
 # main process
 if __name__ == "__main__":
+    # Is it possible to make these fully immutable?
+    PROGRAM_VERSION = '0.7a'
+    PROGRAM_NAME = 'FART'
+    PROGRAM_DESC = 'Foggy Album Rename Tool'
+    PROGRAM_CONTACT = 'FoggyAlbumRename@trvm.xyz'
+    FILE_NAME = sys.argv[0]
+
     main()

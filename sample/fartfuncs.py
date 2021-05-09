@@ -2,16 +2,14 @@
 
 import musicbrainzngs
 
-def new_useragent():
+def new_useragent(name, desc, version, contact):
     '''
     Define a useragent for use with MusicBrainzNGS queries
 
     return: None
     '''
-    appName = 'FoggyAlbumRenameTool(FART)'
-    appVersion = '0.6a'
-    appContact = 'FoggyAlbumRename@trvm.xyz'
-    musicbrainzngs.set_useragent(appName, appVersion, appContact)
+    appName = desc + '(' + name + ')'
+    musicbrainzngs.set_useragent(appName, version, contact)
 
 def select_album(_artist, _album):
     '''
