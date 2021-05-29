@@ -36,10 +36,13 @@ def main():
     # Min-match box
     min_match_label = Label(entry_frame, text='Min Match', anchor=E)
     min_match_label.grid(row=1, column=2, padx=5)
-    min_match_box = Entry(entry_frame, width=30, borderwidth=3)
-    min_match_box.delete(0, END)
-    min_match_box.insert(0, '75')
-    min_match_box.grid(row=1, column=3, padx=5, pady=5, columnspan=2)
+    #min_match_box = Entry(entry_frame, width=30, borderwidth=3)
+    #min_match_box.delete(0, END)
+    #min_match_box.insert(0, '75')
+    #min_match_box.grid(row=1, column=3, padx=5, pady=5, columnspan=2)
+    min_match_scale = Scale(entry_frame, to=100, orient=HORIZONTAL, tickinterval=20, length=250)
+    min_match_scale.set(75)
+    min_match_scale.grid(row=1, column=3, padx=5, columnspan=2)
 
     # Music root box
     music_root_label = Label(entry_frame, text='Music Root', anchor=E)
@@ -77,7 +80,7 @@ def main():
     # Control buttons
     go_button = Button(control_frame, text='Rename', padx=10)
     go_button.grid(row=0, column=0)
-    go_button = Button(control_frame, text='Quit', padx=10)
+    go_button = Button(control_frame, text='Quit', padx=10, command=root.quit)
     go_button.grid(row=0, column=1)
 
     root.mainloop()
